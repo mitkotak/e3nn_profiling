@@ -1,5 +1,5 @@
 import site
-site.addsitedir('/home/mkotak/profiling/lib/python3.10/site-packages')
+site.addsitedir('/home/mkotak/e3nn_profiling/profiling_env/lib/python3.10/site-packages')
 import time
 import haiku as hk
 import jax
@@ -47,14 +47,15 @@ f = jax.value_and_grad(
 
 f = jax.jit(f)
 
-for _ in range(max(int(1000 // 100), 1)):
+for _ in range(20):
     z = f(w, *inputs_jax)
     jax.tree_util.tree_map(lambda x: x.block_until_ready(), z)
 
-t = time.perf_counter()
 
+jax.profiler.start_trace("./profile/e3nn_jax")
 z = f(w, *inputs_jax)
 jax.tree_util.tree_map(lambda x: x.block_until_ready(), z)
+jax.profiler.stop_trace()
 
 with open("xla.txt", "wt") as file:
     file.write(jit_code(f, w, *inputs_jax))

@@ -20,7 +20,7 @@ irreps_in1 = o3.Irreps(irreps_string)
 irreps_in2 = o3.Irreps(irreps_string)
 irreps_out = o3.Irreps(irreps_string)
 tp = o3.FullyConnectedTensorProduct(irreps_in1, irreps_in2, irreps_out,
-                                    _specialized_code=True,
+                                    _specialized_code=False,
                                     _optimize_einsums=True)
 tp = tp.to(device=device)
 tp = compile(tp)
@@ -34,14 +34,26 @@ inputs = iter(
         ]
     )
 
-t = Timer(
-    stmt=("tp.zero_grad()\n" "out = tp(*next(inputs))\n" "out.tanh().sum().backward()\n"),
-        globals={"tp": tp, "inputs": inputs},
-    )
+# warmup
 
-torch.cuda.cudart().cudaProfilerStart()
-torch.cuda.nvtx.range_push("profiling")
-perloop = t.timeit(1)
-torch.cuda.nvtx.range_pop()
-torch.cuda.cudart().cudaProfilerStop()
+for _ in range(20):
+    tp.zero_grad()
+    out = tp(*next(inputs))
+    out.tanh().sum().backward()
+
+#torch.cuda.cudart().cudaProfilerStart()
+#torch.cuda.nvtx.range_push("profiling")
+with torch.profiler.profile(
+        activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
+        on_trace_ready=torch.profiler.tensorboard_trace_handler('./profile/e3nn_pytorch/tensor_profile_pytorch.trace.json'),
+        record_shapes=True,
+        profile_memory=True,
+        with_stack=True
+) as prof:
+    tp.zero_grad()
+    out = tp(*next(inputs))
+    out.tanh().sum().backward()
+    prof.step()
+#torch.cuda.nvtx.range_pop()
+#torch.cuda.cudart().cudaProfilerStop()
 
