@@ -40,22 +40,14 @@ inputs = iter(
     )
 
 
+t = Timer(
+        stmt=("tp.zero_grad()\n" "out = tp(*next(inputs))\n" + "out.tanh().sum().backward()\n"),
+        globals={"tp": tp, "inputs": inputs},
+    )
+
 # warmup
+t.timeit(5)
 
-for _ in range(20):
-    tp.zero_grad()
-    out = tp(*next(inputs))
-    out.tanh().sum().backward()
-    
-
-with torch.profiler.profile(
-        activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
-        on_trace_ready=torch.profiler.tensorboard_trace_handler('./profile/tensor_partial_compute_combined_tps.trace.json'),
-        record_shapes=True,
-        profile_memory=True,
-        with_stack=True
-) as prof:
-    tp.zero_grad()
-    out = tp(*next(inputs))
-    out.tanh().sum().backward()
-
+perloop = t.timeit(100)
+print()
+print(perloop)
