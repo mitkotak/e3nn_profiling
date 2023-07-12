@@ -45,7 +45,7 @@ for _ in range(20):
 #torch.cuda.nvtx.range_push("profiling")
 with torch.profiler.profile(
         activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
-        on_trace_ready=torch.profiler.tensorboard_trace_handler('./profile/e3nn_pytorch/tensor_profile_pytorch.trace.json'),
+        on_trace_ready=torch.profiler.tensorboard_trace_handler('./profile/e3nn-torch/'),
         record_shapes=True,
         profile_memory=True,
         with_stack=True

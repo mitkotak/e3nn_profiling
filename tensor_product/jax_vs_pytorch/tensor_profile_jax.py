@@ -1,5 +1,5 @@
 import site
-site.addsitedir('/home/mkotak/e3nn_profiling/profiling_env/lib/python3.10/site-packages')
+site.addsitedir('/home/mkotak/atomic_architects/venv/jax_env/lib/python3.10/site-packages')
 import time
 import haiku as hk
 import jax
@@ -7,7 +7,7 @@ import jax.numpy as jnp
 import jaxlib
 
 import e3nn_jax
-from e3nn_jax._src.util.jit import jit_code
+from e3nn_jax._src.utils.jit import jit_code
 
 # Constants
 irreps_string = "1e"
@@ -52,10 +52,9 @@ for _ in range(20):
     jax.tree_util.tree_map(lambda x: x.block_until_ready(), z)
 
 
-jax.profiler.start_trace("./profile/e3nn_jax")
-z = f(w, *inputs_jax)
-jax.tree_util.tree_map(lambda x: x.block_until_ready(), z)
-jax.profiler.stop_trace()
+with jax.profiler.trace("./profile/e3nn-jax"):
+    z = f(w, *inputs_jax)
+    jax.tree_util.tree_map(lambda x: x.block_until_ready(), z)
 
-with open("xla.txt", "wt") as file:
-    file.write(jit_code(f, w, *inputs_jax))
+# with open("xla.txt", "wt") as file:
+#     file.write(jit_code(f, w, *inputs_jax))
